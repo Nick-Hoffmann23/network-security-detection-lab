@@ -1,7 +1,12 @@
+from datetime import datetime 
+
+
+
 PORT_SCAN_THRESHOLD = 3
 FAILED_CONNECTION_THRESHOLD = 2
 failed_alert_ips = set()
 port_scan_alert_ips = set()
+
 
 
 def parse_conn_log(file_path):
@@ -81,15 +86,46 @@ for source_ip in high_risk_ips:
     print("High risk IP detected:", source_ip)
 
 
+def get_risk_level(score):
+    if score >= 100:
+        return "Critical"
+    elif score >= 60:
+        return "High"
+    elif score >= 40:
+        return "Medium"
+    else:
+        return "Low"
+
+
 def print_security_report(ip, score, reasons):
+    risk_level = get_risk_level(score)
     print("Security Report for IP:", ip)
     print("Risk Score:", score)
+    print("Risk Level:", risk_level)
     print("Reasons:")
     for reason in reasons:
         print("-", reason)
     print()
 
+
+def save_security_report(ip, score, reasons):
+    timestamp = datetime.now()
+    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+    with open("security_report.txt", "a") as report_file:
+        risk_level = get_risk_level(score)
+        report_file.write("Timestamp: " + formatted_time + "\n")
+        report_file.write("Security Report for IP:" + ip + "\n")
+        report_file.write("Risk Score::" + str(score) + "\n")
+        report_file.write("Risk Level:" + risk_level + "\n")
+        report_file.write("Reasons: \n")
+        for reason in reasons:
+            report_file.write("-" + reason + "\n")
+
+        report_file.write("\n")
+
 risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
 
 for ip, score in risk_scores.items():
     print_security_report(ip, score, reasons[ip])
+    save_security_report(ip, score, reasons[ip])
