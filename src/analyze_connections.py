@@ -45,14 +45,19 @@ counts, ports_by_ip, failed_counts = parse_conn_log("conn.log")
 
 def calculate_risk_scores(failed_alert_ips, port_scan_alert_ips):
     risk_scores = {}
+    reasons = {}
+
     for ip in failed_alert_ips:
         risk_scores[ip] = 40
+        reasons[ip] = ["Failed connection threshold exceeded"]
     for ip in port_scan_alert_ips:
         if ip in risk_scores:
             risk_scores[ip] += 60
+            reasons[ip].append("Port scan threshold exceeded")
         else:
             risk_scores[ip] = 60
-    return risk_scores
+            reasons[ip] = ["Port scan threshold exceeded"]
+    return risk_scores, reasons
 
 
 
@@ -76,7 +81,7 @@ for source_ip in high_risk_ips:
     print("High risk IP detected:", source_ip)
 
 
-risk_scores = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
+risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
 
 for ip, score in risk_scores.items():
-    print("IP:", ip, "Risk score:", score)
+    print("IP:", ip, "Risk score:", score, "Reasons:", reasons[ip])
