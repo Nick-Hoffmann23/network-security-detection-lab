@@ -3,6 +3,8 @@ ports_by_ip = {}
 failed_counts = {}
 PORT_SCAN_THRESHOLD = 3
 FAILED_CONNECTION_THRESHOLD = 2
+failed_alert_ips = set()
+port_scan_alert_ips = set()
 
 with open("conn.log", "r") as f:
     for line in f:
@@ -38,6 +40,7 @@ with open("conn.log", "r") as f:
     for source_ip, count in failed_counts.items():
         if count >= FAILED_CONNECTION_THRESHOLD:
             print("Possible failed connection alert:", source_ip, count)
+            failed_alert_ips.add(source_ip)
 
 
 for source_ip, ports in ports_by_ip.items():
@@ -45,6 +48,13 @@ for source_ip, ports in ports_by_ip.items():
 
     if unique_ports > PORT_SCAN_THRESHOLD:
         print("Possible port scan alert:", source_ip, unique_ports, ports)
+        port_scan_alert_ips.add(source_ip)
 
+
+high_risk_ips = failed_alert_ips.intersection(port_scan_alert_ips)
+
+for source_ip in high_risk_ips:
+    print("High risk IP detected:", source_ip)
+    
     
 
