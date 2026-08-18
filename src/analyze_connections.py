@@ -81,7 +81,15 @@ for source_ip in high_risk_ips:
     print("High risk IP detected:", source_ip)
 
 
+def print_security_report(ip, score, reasons):
+    print("Security Report for IP:", ip)
+    print("Risk Score:", score)
+    print("Reasons:")
+    for reason in reasons:
+        print("-", reason)
+    print()
+
 risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
 
 for ip, score in risk_scores.items():
-    print("IP:", ip, "Risk score:", score, "Reasons:", reasons[ip])
+    print_security_report(ip, score, reasons[ip])
