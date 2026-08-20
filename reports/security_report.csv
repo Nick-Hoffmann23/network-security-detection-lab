@@ -3,3 +3,4 @@ Timestamp,IP Address,Risk Score,Risk Level,Reasons
 2026-08-19 22:04:10,fe80::14e8:d8b:e701:6deb,100,Critical,Failed connection threshold exceeded; Port scan threshold exceeded
 2026-08-20 14:22:26,fe80::14e8:d8b:e701:6deb,120,Critical,Failed connection threshold exceeded; Port scan threshold exceeded
 2026-08-20 14:23:20,fe80::14e8:d8b:e701:6deb,100,Critical,Failed connection threshold exceeded; Port scan threshold exceeded
+2026-08-20 15:22:54,fe80::14e8:d8b:e701:6deb,100,Critical,Failed connection threshold exceeded; Port scan threshold exceeded

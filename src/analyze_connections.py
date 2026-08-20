@@ -1,6 +1,7 @@
 from datetime import datetime 
 import csv
 import os
+import sys 
 
 PORT_SCAN_THRESHOLD = 3
 FAILED_CONNECTION_THRESHOLD = 2
@@ -156,7 +157,12 @@ def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_r
 
 
 def main():
-    counts, ports_by_ip, failed_counts = parse_conn_log("logs/conn.log")
+    if len(sys.argv) < 2:
+        print("Usage: src/analyze_connections.py <log_file>>")
+        return
+    
+    file_path = sys.argv[1] 
+    counts, ports_by_ip, failed_counts = parse_conn_log(file_path)
 
 
     failed_alert_ips = set()

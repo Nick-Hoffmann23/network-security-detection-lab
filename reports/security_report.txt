@@ -30,3 +30,11 @@ Reasons:
 -Failed connection threshold exceeded
 -Port scan threshold exceeded
 
+Timestamp: 2026-08-20 15:22:54
+Security Report for IP:fe80::14e8:d8b:e701:6deb
+Risk Score::100
+Risk Level:Critical
+Reasons: 
+-Failed connection threshold exceeded
+-Port scan threshold exceeded
+
