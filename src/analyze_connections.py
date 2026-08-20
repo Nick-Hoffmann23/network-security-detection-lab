@@ -190,6 +190,7 @@ def main():
             save_csv_report(ip, score, reasons[ip])
 
 
+
     print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)
     save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)
 
