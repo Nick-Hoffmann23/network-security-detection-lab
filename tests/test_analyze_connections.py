@@ -1,4 +1,5 @@
-from src.analyze_connections import calculate_risk_scores
+from src.analyze_connections import calculate_risk_scores, get_risk_level
+
 
 
 def test_failed_alert_score():
@@ -23,3 +24,16 @@ def test_both_alerts_score():
     risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
     assert risk_scores["192.168.1.10"] == 100
     assert reasons["192.168.1.10"] == ["Failed connection threshold exceeded", "Port scan threshold exceeded"]
+
+
+def test_low_risk_level():
+    assert get_risk_level(0) == "Low"
+
+def test_medium_risk_level():
+    assert get_risk_level(40) == "Medium"
+
+def test_high_risk_level():
+    assert get_risk_level(60) == "High"
+
+def test_critical_risk_level():
+    assert get_risk_level(100) == "Critical"
