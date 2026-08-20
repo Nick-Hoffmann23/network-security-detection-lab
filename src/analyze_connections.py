@@ -5,8 +5,6 @@ import sys
 
 PORT_SCAN_THRESHOLD = 3
 FAILED_CONNECTION_THRESHOLD = 2
-
-
 MIN_ALERT_LEVEL = "High"
 
 
@@ -162,6 +160,10 @@ def main():
         return
     
     file_path = sys.argv[1] 
+    if not os.path.isfile(file_path):
+        print("Error: File not found:", file_path)
+        return
+    
     counts, ports_by_ip, failed_counts = parse_conn_log(file_path)
 
 
