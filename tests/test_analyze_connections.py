@@ -1,4 +1,5 @@
-from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log
+from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert 
+
 
 
 
@@ -48,3 +49,17 @@ def test_parse_conn_log():
     assert ports_by_ip["192.168.1.196"] == {"5353"}
     assert failed_counts["192.168.1.194"] == 1
     assert failed_counts["192.168.1.196"] == 1
+
+
+def test_should_alert_low():
+    assert should_alert(0) == False
+
+def test_should_alert_medium():
+    assert should_alert(40) == False
+
+def test_should_alert_high():
+    assert should_alert(60) == True
+
+def test_should_alert_critical():
+    assert should_alert(100) == True
+
