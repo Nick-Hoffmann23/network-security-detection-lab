@@ -1,5 +1,5 @@
-from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert, load_config
-
+from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert, load_config, validate_config
+import pytest
 
 
 
@@ -74,3 +74,46 @@ def test_load_config():
 def test_should_alert_between_levels():
     assert should_alert(79, "High") == True
     assert should_alert(79, "Critical") == False
+
+
+def test_validate_config_missing_key():
+    config = {
+        "FAILED_CONNECTION_THRESHOLD": 2,
+        "PORT_SCAN_THRESHOLD": 10
+    }
+
+    with pytest.raises(ValueError):
+        validate_config(config)
+
+
+def test_validate_config_negative_threshold():
+    config = {
+        "FAILED_CONNECTION_THRESHOLD": -1,
+        "PORT_SCAN_THRESHOLD": 10,
+        "MIN_ALERT_LEVEL": "Critical"
+    }
+
+    with pytest.raises(ValueError):
+        validate_config(config)
+
+
+def test_validate_config_negative_port_scan_threshold():
+    config = {
+            "FAILED_CONNECTION_THRESHOLD": 2,
+            "PORT_SCAN_THRESHOLD": -1,
+            "MIN_ALERT_LEVEL": "Critical"
+        }
+
+    with pytest.raises(ValueError):
+        validate_config(config)
+
+
+def test_validate_config_invalid_alert_level():
+    config = {
+        "FAILED_CONNECTION_THRESHOLD": 2,
+        "PORT_SCAN_THRESHOLD": 10,
+        "MIN_ALERT_LEVEL": "Severe"
+    }
+
+    with pytest.raises(ValueError):
+        validate_config(config)
