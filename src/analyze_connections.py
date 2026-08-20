@@ -2,13 +2,11 @@ from datetime import datetime
 import csv
 import os
 
-
-
 PORT_SCAN_THRESHOLD = 3
 FAILED_CONNECTION_THRESHOLD = 2
 failed_alert_ips = set()
 port_scan_alert_ips = set()
-
+MIN_ALERT_LEVEL = "High"
 
 
 def parse_conn_log(file_path):
@@ -47,7 +45,8 @@ def parse_conn_log(file_path):
                 else:
                     failed_counts[source_ip] = 1
     return counts, ports_by_ip, failed_counts
-counts, ports_by_ip, failed_counts = parse_conn_log("conn.log")
+
+counts, ports_by_ip, failed_counts = parse_conn_log("logs/conn.log")
 
 
 def calculate_risk_scores(failed_alert_ips, port_scan_alert_ips):
@@ -99,6 +98,19 @@ def get_risk_level(score):
         return "Low"
 
 
+def should_alert(score):
+    risk_level = get_risk_level(score)
+
+    levels = {
+        "Low": 1,
+        "Medium": 2,
+        "High": 3,
+        "Critical": 4
+    }
+
+    return levels[risk_level] >= levels[MIN_ALERT_LEVEL]
+
+
 def print_security_report(ip, score, reasons):
     risk_level = get_risk_level(score)
     print("Security Report for IP:", ip)
@@ -114,7 +126,7 @@ def save_security_report(ip, score, reasons):
     timestamp = datetime.now()
     formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
-    with open("security_report.txt", "a") as report_file:
+    with open("reports/security_report.txt", "a") as report_file:
         risk_level = get_risk_level(score)
         report_file.write("Timestamp: " + formatted_time + "\n")
         report_file.write("Security Report for IP:" + ip + "\n")
@@ -132,15 +144,28 @@ def save_csv_report(ip, score, reasons):
     timestamp = datetime.now()
     formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
-    file_exists = os.path.isfile("security_report.csv")
+    file_exists = os.path.isfile("reports/security_report.csv")
 
-    with open("security_report.csv", "a", newline="") as csvfile:
+    with open("reports/security_report.csv", "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
 
         if not file_exists:
             writer.writerow(["Timestamp", "IP Address", "Risk Score", "Risk Level", "Reasons"])
 
         writer.writerow([formatted_time, ip, score, risk_level, "; ".join(reasons)])
+
+
+def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips):
+    timestamp = datetime.now()
+    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+    with open("reports/analysis_summary.txt", "a") as summary_file:
+        summary_file.write("Timestamp: " + formatted_time + "\n")
+        summary_file.write("Total unique source IPs: " + str(len(counts)) + "\n")
+        summary_file.write("IPs exceeding failed connection threshold: " + str(len(failed_alert_ips)) + "\n")
+        summary_file.write("IPs exceeding port scan threshold: " + str(len(port_scan_alert_ips)) + "\n")
+        summary_file.write("High risk IPs (both thresholds exceeded): " + str(len(high_risk_ips)) + "\n")
+        summary_file.write("\n")
 
 
 risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
@@ -156,7 +181,10 @@ def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_r
 
 
 for ip, score in risk_scores.items():
-    print_security_report(ip, score, reasons[ip])
-    save_security_report(ip, score, reasons[ip])
-    save_csv_report(ip, score, reasons[ip])
-    print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)
+    if should_alert(score):
+        print_security_report(ip, score, reasons[ip])
+        save_security_report(ip, score, reasons[ip])
+        save_csv_report(ip, score, reasons[ip])
+
+print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)
+save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)

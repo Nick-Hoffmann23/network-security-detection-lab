@@ -1,0 +1,12 @@
+Timestamp: 2026-08-19 22:02:50
+Total unique source IPs: 8
+IPs exceeding failed connection threshold: 1
+IPs exceeding port scan threshold: 1
+High risk IPs (both thresholds exceeded): 1
+
+Timestamp: 2026-08-19 22:04:10
+Total unique source IPs: 8
+IPs exceeding failed connection threshold: 1
+IPs exceeding port scan threshold: 1
+High risk IPs (both thresholds exceeded): 1
+
