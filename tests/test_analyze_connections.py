@@ -1,4 +1,4 @@
-from src.analyze_connections import calculate_risk_scores, get_risk_level
+from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log
 
 
 
@@ -37,3 +37,14 @@ def test_high_risk_level():
 
 def test_critical_risk_level():
     assert get_risk_level(100) == "Critical"
+
+
+def test_parse_conn_log():
+    counts, ports_by_ip, failed_counts = parse_conn_log("tests/sample_conn.log")
+
+    assert counts["192.168.1.194"] == 1
+    assert counts["192.168.1.196"] == 1
+    assert ports_by_ip["192.168.1.194"] == {"5353"}
+    assert ports_by_ip["192.168.1.196"] == {"5353"}
+    assert failed_counts["192.168.1.194"] == 1
+    assert failed_counts["192.168.1.196"] == 1
