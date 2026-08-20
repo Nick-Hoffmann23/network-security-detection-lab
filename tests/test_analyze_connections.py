@@ -1,4 +1,4 @@
-from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert 
+from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert, load_config
 
 
 
@@ -52,14 +52,25 @@ def test_parse_conn_log():
 
 
 def test_should_alert_low():
-    assert should_alert(0) == False
+    assert should_alert(0, "High") == False
 
 def test_should_alert_medium():
-    assert should_alert(40) == False
+    assert should_alert(40, "High") == False
 
 def test_should_alert_high():
-    assert should_alert(60) == True
+    assert should_alert(60, "High") == True
 
 def test_should_alert_critical():
-    assert should_alert(100) == True
+    assert should_alert(100, "High") == True
 
+
+def test_load_config():
+    config = load_config()
+    assert config["FAILED_CONNECTION_THRESHOLD"] == 2
+    assert config["PORT_SCAN_THRESHOLD"] == 10
+    assert config["MIN_ALERT_LEVEL"] == "Critical"
+
+
+def test_should_alert_between_levels():
+    assert should_alert(79, "High") == True
+    assert should_alert(79, "Critical") == False

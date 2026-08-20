@@ -2,10 +2,19 @@ from datetime import datetime
 import csv
 import os
 import sys 
+import json
+
 
 PORT_SCAN_THRESHOLD = 3
 FAILED_CONNECTION_THRESHOLD = 2
 MIN_ALERT_LEVEL = "High"
+
+
+def load_config():
+    with open("config.json", "r") as config_file:
+        config = json.load(config_file)
+
+    return config 
 
 
 def parse_conn_log(file_path):
@@ -74,7 +83,7 @@ def get_risk_level(score):
         return "Low"
 
 
-def should_alert(score):
+def should_alert(score, min_alert_level):
     risk_level = get_risk_level(score)
 
     levels = {
@@ -84,7 +93,7 @@ def should_alert(score):
         "Critical": 4
     }
 
-    return levels[risk_level] >= levels[MIN_ALERT_LEVEL]
+    return levels[risk_level] >= levels[min_alert_level]
 
 
 def print_security_report(ip, score, reasons):
@@ -163,6 +172,13 @@ def main():
     if not os.path.isfile(file_path):
         print("Error: File not found:", file_path)
         return
+
+    config = load_config()
+    FAILED_CONNECTION_THRESHOLD = config["FAILED_CONNECTION_THRESHOLD"]
+    PORT_SCAN_THRESHOLD = config["PORT_SCAN_THRESHOLD"]
+    MIN_ALERT_LEVEL = config["MIN_ALERT_LEVEL"]
+
+
     
     counts, ports_by_ip, failed_counts = parse_conn_log(file_path)
 
@@ -192,7 +208,7 @@ def main():
     risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
 
     for ip, score in risk_scores.items():
-        if should_alert(score):
+        if should_alert(score, MIN_ALERT_LEVEL):
             print_security_report(ip, score, reasons[ip])
             save_security_report(ip, score, reasons[ip])
             save_csv_report(ip, score, reasons[ip])
