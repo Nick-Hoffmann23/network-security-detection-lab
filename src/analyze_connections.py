@@ -254,7 +254,25 @@ def main():
             failed_target_alert_ips.add(source_ip)
 
 
-    high_risk_ips = failed_alert_ips.intersection(port_scan_alert_ips)
+    all_alert_ips = failed_alert_ips | port_scan_alert_ips | failed_target_alert_ips
+
+    high_risk_ips = set()
+
+    for ip in all_alert_ips:
+        alert_count = 0
+
+        if ip in failed_alert_ips:
+            alert_count += 1
+
+        if ip in port_scan_alert_ips:
+            alert_count += 1
+
+        if ip in failed_target_alert_ips:
+            alert_count += 1
+
+        if alert_count >= 2:
+            high_risk_ips.add(ip)
+
 
     for source_ip in high_risk_ips:
         print("High risk IP detected:", source_ip)
