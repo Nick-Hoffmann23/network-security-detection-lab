@@ -186,7 +186,7 @@ def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_
         summary_file.write("Total unique source IPs: " + str(len(counts)) + "\n")
         summary_file.write("IPs exceeding failed connection threshold: " + str(len(failed_alert_ips)) + "\n")
         summary_file.write("IPs exceeding port scan threshold: " + str(len(port_scan_alert_ips)) + "\n")
-        summary_file.write("High risk IPs (both thresholds exceeded): " + str(len(high_risk_ips)) + "\n")
+        summary_file.write("High risk IPs (2+ alert types): " + str(len(high_risk_ips)) + "\n")
         summary_file.write("\n")
 
 
@@ -196,7 +196,7 @@ def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed
     print("Total unique source IPs:", len(counts))
     print("IPs exceeding failed connection threshold:", len(failed_alert_ips))
     print("IPs exceeding port scan threshold:", len(port_scan_alert_ips))
-    print("High risk IPs (both thresholds exceeded):", len(high_risk_ips))
+    print("High risk IPs (2+ alert types):", len(high_risk_ips))
     print("IPs exceeding repeated target threshold: ", len(failed_target_alert_ips))
     print()
 
