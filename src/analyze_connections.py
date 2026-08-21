@@ -177,7 +177,7 @@ def save_csv_report(ip, score, reasons):
         writer.writerow([formatted_time, ip, score, risk_level, "; ".join(reasons)])
 
 
-def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips):
+def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips, high_risk_ips):
     timestamp = datetime.now()
     formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -191,12 +191,13 @@ def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_ri
 
 
 
-def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips):
+def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips, high_risk_ips):
     print("\nAnalysis Summary:")
     print("Total unique source IPs:", len(counts))
     print("IPs exceeding failed connection threshold:", len(failed_alert_ips))
     print("IPs exceeding port scan threshold:", len(port_scan_alert_ips))
     print("High risk IPs (both thresholds exceeded):", len(high_risk_ips))
+    print("IPs exceeding repeated target threshold: ", len(failed_target_alert_ips))
     print()
 
 
@@ -268,8 +269,8 @@ def main():
 
 
 
-    print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)
-    save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, high_risk_ips)
+    print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips, high_risk_ips)
+    save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips, high_risk_ips)
 
 
 if __name__ == "__main__":
