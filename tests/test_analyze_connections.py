@@ -1,4 +1,5 @@
-from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert, load_config, validate_config
+from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert, load_config, validate_config, find_high_risk_ips
+
 import pytest
 
 
@@ -187,4 +188,29 @@ def test_failed_by_target():
 
     assert failed_by_target[("192.168.1.194", "224.0.0.251")] == 1
     assert failed_by_target[("192.168.1.196", "224.0.0.251")] == 1
+
+
+def test_high_risk_failed_and_port_scan():
+    result = find_high_risk_ips({"192.168.1.10"}, {"192.168.1.10"}, set())
+
+    assert result == {"192.168.1.10"}
+
+
+def test_high_risk_failed_and_target():
+    result = find_high_risk_ips({"192.168.1.20"}, set(),  {"192.168.1.20"})
+
+    assert result == {"192.168.1.20"}
+
+
+def test_high_risk_port_scan_and_target():
+    result = find_high_risk_ips(set(), {"192.168.1.30"}, {"192.168.1.30"})
+
+    assert result == {"192.168.1.30"}
+
+
+def test_not_high_risk_single_alert():
+    result = find_high_risk_ips({"192.168.1.40"}, set(),  set())
+
+    assert result == set()
+
 

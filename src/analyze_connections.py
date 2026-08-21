@@ -187,6 +187,7 @@ def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_
         summary_file.write("IPs exceeding failed connection threshold: " + str(len(failed_alert_ips)) + "\n")
         summary_file.write("IPs exceeding port scan threshold: " + str(len(port_scan_alert_ips)) + "\n")
         summary_file.write("High risk IPs (2+ alert types): " + str(len(high_risk_ips)) + "\n")
+        summary_file.write(f"IPs exceeding repeated target threshold: {len(failed_target_alert_ips)}\n")
         summary_file.write("\n")
 
 
@@ -200,6 +201,26 @@ def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed
     print("IPs exceeding repeated target threshold: ", len(failed_target_alert_ips))
     print()
 
+def find_high_risk_ips(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips):
+    all_alert_ips = failed_alert_ips | port_scan_alert_ips | failed_target_alert_ips
+    high_risk_ips = set()
+
+    for ip in all_alert_ips:
+        alert_count = 0
+
+        if ip in failed_alert_ips:
+            alert_count += 1
+
+        if ip in port_scan_alert_ips:
+            alert_count += 1
+
+        if ip in failed_target_alert_ips:
+            alert_count += 1
+
+        if alert_count >= 2:
+            high_risk_ips.add(ip)
+
+    return high_risk_ips
 
 def main():
     if len(sys.argv) < 2:
@@ -253,25 +274,7 @@ def main():
             )
             failed_target_alert_ips.add(source_ip)
 
-
-    all_alert_ips = failed_alert_ips | port_scan_alert_ips | failed_target_alert_ips
-
-    high_risk_ips = set()
-
-    for ip in all_alert_ips:
-        alert_count = 0
-
-        if ip in failed_alert_ips:
-            alert_count += 1
-
-        if ip in port_scan_alert_ips:
-            alert_count += 1
-
-        if ip in failed_target_alert_ips:
-            alert_count += 1
-
-        if alert_count >= 2:
-            high_risk_ips.add(ip)
+    high_risk_ips = find_high_risk_ips(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
 
 
     for source_ip in high_risk_ips:

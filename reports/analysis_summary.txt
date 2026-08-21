@@ -64,3 +64,16 @@ IPs exceeding failed connection threshold: 1
 IPs exceeding port scan threshold: 0
 High risk IPs (both thresholds exceeded): 0
 
+Timestamp: 2026-08-21 13:45:44
+Total unique source IPs: 8
+IPs exceeding failed connection threshold: 1
+IPs exceeding port scan threshold: 0
+High risk IPs (2+ alert types): 0
+
+Timestamp: 2026-08-21 13:49:36
+Total unique source IPs: 8
+IPs exceeding failed connection threshold: 1
+IPs exceeding port scan threshold: 0
+High risk IPs (2+ alert types): 0
+IPs exceeding repeated target threshold: 0
+
