@@ -9,6 +9,7 @@ def test_failed_alert_score():
     failed_target_alert_ips = set()
 
     risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
+
     assert risk_scores["192.168.1.10"] == 40
     assert reasons["192.168.1.10"] == ["Failed connection threshold exceeded"]
 
@@ -19,6 +20,7 @@ def test_port_scan_alert_score():
     failed_target_alert_ips = set()
 
     risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
+
     assert risk_scores["192.168.1.40"] == 60
     assert reasons["192.168.1.40"] == ["Port scan threshold exceeded"]
 
@@ -51,6 +53,7 @@ def test_port_scan_and_target_score():
     failed_target_alert_ips = {"192.168.1.10"}
     
     risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
+
     assert risk_scores["192.168.1.10"] == 110
     assert reasons["192.168.1.10"] == ["Port scan threshold exceeded", "Repeated failed connections to same target"]
     
@@ -62,8 +65,21 @@ def test_both_alerts_score():
     failed_target_alert_ips = set()
 
     risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
+
     assert risk_scores["192.168.1.10"] == 100
     assert reasons["192.168.1.10"] == ["Failed connection threshold exceeded", "Port scan threshold exceeded"]
+
+
+def test_all_three_alerts_score():
+    failed_alert_ips = {"192.168.1.70"}
+    port_scan_alert_ips = {"192.168.1.70"}
+    failed_target_alert_ips = {"192.168.1.70"}
+
+    risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
+
+    assert risk_scores["192.168.1.70"] == 150
+    assert reasons["192.168.1.70"] == ["Failed connection threshold exceeded", "Port scan threshold exceeded", "Repeated failed connections to same target"]
+
 
 
 
