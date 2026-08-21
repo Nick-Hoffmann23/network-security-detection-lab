@@ -19,7 +19,7 @@ def load_config():
 
 
 def validate_config(config):
-    required_keys = ["FAILED_CONNECTION_THRESHOLD", "PORT_SCAN_THRESHOLD", "MIN_ALERT_LEVEL"]
+    required_keys = ["FAILED_CONNECTION_THRESHOLD", "PORT_SCAN_THRESHOLD", "MIN_ALERT_LEVEL", "FAILED_TARGET_THRESHOLD"]
     for key in required_keys:
         if key not in config:
             raise ValueError(f"Missing required configuration key: {key}")
@@ -34,11 +34,16 @@ def validate_config(config):
     if config["MIN_ALERT_LEVEL"] not in valid_alert_levels:
         raise ValueError(f"MIN_ALERT_LEVEL must be one of {valid_alert_levels}")
 
+    if not isinstance(config["FAILED_TARGET_THRESHOLD"], int) or config["FAILED_TARGET_THRESHOLD"] < 0:
+        raise ValueError("FAILED_TARGET_THRESHOLD must be a non-negative integer")
+
 
 def parse_conn_log(file_path):
     counts = {}
     ports_by_ip = {}
     failed_counts = {}
+    failed_by_target = {}
+
 
     with open(file_path, "r") as f:
         for line in f:
@@ -70,10 +75,17 @@ def parse_conn_log(file_path):
                     failed_counts[source_ip] += 1
                 else:
                     failed_counts[source_ip] = 1
-    return counts, ports_by_ip, failed_counts
+
+                target_pair = (source_ip, destination_ip)
+                if target_pair in failed_by_target:
+                    failed_by_target[target_pair] += 1
+                else:
+                    failed_by_target[target_pair] = 1
+
+    return counts, ports_by_ip, failed_counts, failed_by_target
 
 
-def calculate_risk_scores(failed_alert_ips, port_scan_alert_ips):
+def calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips):
     risk_scores = {}
     reasons = {}
 
@@ -87,6 +99,13 @@ def calculate_risk_scores(failed_alert_ips, port_scan_alert_ips):
         else:
             risk_scores[ip] = 60
             reasons[ip] = ["Port scan threshold exceeded"]
+    for ip in failed_target_alert_ips:
+        if ip in risk_scores:
+            risk_scores[ip] += 50
+            reasons[ip].append("Repeated failed connections to same target")
+        else:
+            risk_scores[ip] = 50
+            reasons[ip] = ["Repeated failed connections to same target"]
     return risk_scores, reasons
 
 
@@ -195,14 +214,17 @@ def main():
     FAILED_CONNECTION_THRESHOLD = config["FAILED_CONNECTION_THRESHOLD"]
     PORT_SCAN_THRESHOLD = config["PORT_SCAN_THRESHOLD"]
     MIN_ALERT_LEVEL = config["MIN_ALERT_LEVEL"]
+    FAILED_TARGET_THRESHOLD = config["FAILED_TARGET_THRESHOLD"]
 
 
     
-    counts, ports_by_ip, failed_counts = parse_conn_log(file_path)
+    counts, ports_by_ip, failed_counts, failed_by_target = parse_conn_log(file_path)
 
 
     failed_alert_ips = set()
     port_scan_alert_ips = set()
+    failed_target_alert_ips = set()
+
 
     for source_ip, count in failed_counts.items():
         if count >= FAILED_CONNECTION_THRESHOLD:
@@ -218,12 +240,25 @@ def main():
             port_scan_alert_ips.add(source_ip)
 
 
+    for target_pair, count in failed_by_target.items():
+        source_ip, destination_ip, = target_pair
+
+        if count >= FAILED_TARGET_THRESHOLD:
+            print(
+                "Repeated failed target alert", 
+                source_ip,
+                destination_ip,
+                count
+            )
+            failed_target_alert_ips.add(source_ip)
+
+
     high_risk_ips = failed_alert_ips.intersection(port_scan_alert_ips)
 
     for source_ip in high_risk_ips:
         print("High risk IP detected:", source_ip)
 
-    risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips)
+    risk_scores, reasons = calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips)
 
     for ip, score in risk_scores.items():
         if should_alert(score, MIN_ALERT_LEVEL):

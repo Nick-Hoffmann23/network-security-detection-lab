@@ -1,5 +1,6 @@
 {
     "FAILED_CONNECTION_THRESHOLD": 2,
     "PORT_SCAN_THRESHOLD": 10,
-    "MIN_ALERT_LEVEL": "Critical"
+    "MIN_ALERT_LEVEL": "Critical",
+    "FAILED_TARGET_THRESHOLD": 3
 }
