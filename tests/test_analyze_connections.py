@@ -1,4 +1,8 @@
-from src.analyze_connections import calculate_risk_scores, get_risk_level, parse_conn_log, should_alert, load_config, validate_config, find_high_risk_ips
+from src.analyze_connections import parse_conn_log
+
+from src.config import load_config, validate_config
+
+from src.detectors import (calculate_risk_scores, get_risk_level, should_alert, find_high_risk_ips)
 
 import pytest
 

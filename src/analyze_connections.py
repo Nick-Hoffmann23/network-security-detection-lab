@@ -1,41 +1,11 @@
-from datetime import datetime 
-import csv
-import os
 import sys 
-import json
+import os
 
+from src.config import load_config
 
-PORT_SCAN_THRESHOLD = 3
-FAILED_CONNECTION_THRESHOLD = 2
-MIN_ALERT_LEVEL = "High"
+from src.reporting import save_analysis_summary, print_analysis_summary, print_security_report, save_csv_report, save_security_report
 
-
-def load_config():
-    with open("config.json", "r") as config_file:
-        config = json.load(config_file)
-
-    validate_config(config)
-    return config 
-
-
-def validate_config(config):
-    required_keys = ["FAILED_CONNECTION_THRESHOLD", "PORT_SCAN_THRESHOLD", "MIN_ALERT_LEVEL", "FAILED_TARGET_THRESHOLD"]
-    for key in required_keys:
-        if key not in config:
-            raise ValueError(f"Missing required configuration key: {key}")
-
-    if not isinstance(config["FAILED_CONNECTION_THRESHOLD"], int) or config["FAILED_CONNECTION_THRESHOLD"] < 0:
-        raise ValueError("FAILED_CONNECTION_THRESHOLD must be a non-negative integer")
-
-    if not isinstance(config["PORT_SCAN_THRESHOLD"], int) or config["PORT_SCAN_THRESHOLD"] < 0:
-        raise ValueError("PORT_SCAN_THRESHOLD must be a non-negative integer")
-
-    valid_alert_levels = ["Low", "Medium", "High", "Critical"]
-    if config["MIN_ALERT_LEVEL"] not in valid_alert_levels:
-        raise ValueError(f"MIN_ALERT_LEVEL must be one of {valid_alert_levels}")
-
-    if not isinstance(config["FAILED_TARGET_THRESHOLD"], int) or config["FAILED_TARGET_THRESHOLD"] < 0:
-        raise ValueError("FAILED_TARGET_THRESHOLD must be a non-negative integer")
+from src.detectors import get_risk_level, find_high_risk_ips, calculate_risk_scores, should_alert
 
 
 def parse_conn_log(file_path):
@@ -85,142 +55,6 @@ def parse_conn_log(file_path):
     return counts, ports_by_ip, failed_counts, failed_by_target
 
 
-def calculate_risk_scores(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips):
-    risk_scores = {}
-    reasons = {}
-
-    for ip in failed_alert_ips:
-        risk_scores[ip] = 40
-        reasons[ip] = ["Failed connection threshold exceeded"]
-    for ip in port_scan_alert_ips:
-        if ip in risk_scores:
-            risk_scores[ip] += 60
-            reasons[ip].append("Port scan threshold exceeded")
-        else:
-            risk_scores[ip] = 60
-            reasons[ip] = ["Port scan threshold exceeded"]
-    for ip in failed_target_alert_ips:
-        if ip in risk_scores:
-            risk_scores[ip] += 50
-            reasons[ip].append("Repeated failed connections to same target")
-        else:
-            risk_scores[ip] = 50
-            reasons[ip] = ["Repeated failed connections to same target"]
-    return risk_scores, reasons
-
-
-def get_risk_level(score):
-    if score >= 100:
-        return "Critical"
-    elif score >= 60:
-        return "High"
-    elif score >= 40:
-        return "Medium"
-    else:
-        return "Low"
-
-
-def should_alert(score, min_alert_level):
-    risk_level = get_risk_level(score)
-
-    levels = {
-        "Low": 1,
-        "Medium": 2,
-        "High": 3,
-        "Critical": 4
-    }
-
-    return levels[risk_level] >= levels[min_alert_level]
-
-
-def print_security_report(ip, score, reasons):
-    risk_level = get_risk_level(score)
-    print("Security Report for IP:", ip)
-    print("Risk Score:", score)
-    print("Risk Level:", risk_level)
-    print("Reasons:")
-    for reason in reasons:
-        print("-", reason)
-    print()
-
-
-def save_security_report(ip, score, reasons):
-    timestamp = datetime.now()
-    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-
-    with open("reports/security_report.txt", "a") as report_file:
-        risk_level = get_risk_level(score)
-        report_file.write("Timestamp: " + formatted_time + "\n")
-        report_file.write("Security Report for IP:" + ip + "\n")
-        report_file.write("Risk Score::" + str(score) + "\n")
-        report_file.write("Risk Level:" + risk_level + "\n")
-        report_file.write("Reasons: \n")
-        for reason in reasons:
-            report_file.write("-" + reason + "\n")
-
-        report_file.write("\n")
-
-
-def save_csv_report(ip, score, reasons):
-    risk_level = get_risk_level(score)
-    timestamp = datetime.now()
-    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-
-    file_exists = os.path.isfile("reports/security_report.csv")
-
-    with open("reports/security_report.csv", "a", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-
-        if not file_exists:
-            writer.writerow(["Timestamp", "IP Address", "Risk Score", "Risk Level", "Reasons"])
-
-        writer.writerow([formatted_time, ip, score, risk_level, "; ".join(reasons)])
-
-
-def save_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips, high_risk_ips):
-    timestamp = datetime.now()
-    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-
-    with open("reports/analysis_summary.txt", "a") as summary_file:
-        summary_file.write("Timestamp: " + formatted_time + "\n")
-        summary_file.write("Total unique source IPs: " + str(len(counts)) + "\n")
-        summary_file.write("IPs exceeding failed connection threshold: " + str(len(failed_alert_ips)) + "\n")
-        summary_file.write("IPs exceeding port scan threshold: " + str(len(port_scan_alert_ips)) + "\n")
-        summary_file.write("High risk IPs (2+ alert types): " + str(len(high_risk_ips)) + "\n")
-        summary_file.write(f"IPs exceeding repeated target threshold: {len(failed_target_alert_ips)}\n")
-        summary_file.write("\n")
-
-
-
-def print_analysis_summary(counts, failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips, high_risk_ips):
-    print("\nAnalysis Summary:")
-    print("Total unique source IPs:", len(counts))
-    print("IPs exceeding failed connection threshold:", len(failed_alert_ips))
-    print("IPs exceeding port scan threshold:", len(port_scan_alert_ips))
-    print("High risk IPs (2+ alert types):", len(high_risk_ips))
-    print("IPs exceeding repeated target threshold: ", len(failed_target_alert_ips))
-    print()
-
-def find_high_risk_ips(failed_alert_ips, port_scan_alert_ips, failed_target_alert_ips):
-    all_alert_ips = failed_alert_ips | port_scan_alert_ips | failed_target_alert_ips
-    high_risk_ips = set()
-
-    for ip in all_alert_ips:
-        alert_count = 0
-
-        if ip in failed_alert_ips:
-            alert_count += 1
-
-        if ip in port_scan_alert_ips:
-            alert_count += 1
-
-        if ip in failed_target_alert_ips:
-            alert_count += 1
-
-        if alert_count >= 2:
-            high_risk_ips.add(ip)
-
-    return high_risk_ips
 
 def main():
     if len(sys.argv) < 2:
