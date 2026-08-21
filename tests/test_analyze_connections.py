@@ -106,12 +106,24 @@ def test_parse_conn_log():
 
     assert counts["192.168.1.194"] == 1
     assert counts["192.168.1.196"] == 1
-    assert ports_by_ip["192.168.1.194"] == {"5353"}
-    assert ports_by_ip["192.168.1.196"] == {"5353"}
+    assert ports_by_ip["192.168.1.194"] == {5353}
+    assert ports_by_ip["192.168.1.196"] == {5353}
     assert failed_counts["192.168.1.194"] == 1
     assert failed_counts["192.168.1.196"] == 1
     assert failed_by_target[("192.168.1.194", "224.0.0.251")] == 1
     assert failed_by_target[("192.168.1.196", "224.0.0.251")] == 1
+
+
+def test_parse_conn_log_skips_invalid_ports():
+    counts, ports_by_ip, failed_counts, failed_by_target = parse_conn_log("tests/sample_conn.log")
+
+    assert "192.168.1.60" not in counts
+
+
+def test_parse_conn_log_missing_conn_state():
+    counts, ports_by_ip, failed_counts, failed_by_target = parse_conn_log("tests/sample_conn.log")
+
+    assert failed_counts.get("192.168.1.70", 0) == 0
 
 
 def test_should_alert_low():

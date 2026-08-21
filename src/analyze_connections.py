@@ -17,16 +17,24 @@ def parse_conn_log(file_path):
 
     with open(file_path, "r") as f:
         for line in f:
-            if line.startswith("#"):
+            if line.startswith("#") or not line.strip():
                 continue
 
             fields = line.split("\t")
+
+            if len(fields) < 12:
+                continue
+
             ts = fields[0]
             uid = fields[1]
             source_ip = fields[2]
             source_port = fields[3]
             destination_ip = fields[4]
-            destination_port = fields[5]
+            try:
+                destination_port = int(fields[5])
+            except ValueError:
+                continue 
+
             conn_state = fields[11]
 
             if source_ip in counts:
